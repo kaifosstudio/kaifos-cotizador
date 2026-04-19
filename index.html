@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kaifos Studio — Cotizador</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --gold:#C9A84C;--gold-light:#E8C97A;--dark:#0E0E0E;--dark-2:#1A1A1A;
+  --dark-3:#242424;--dark-4:#2E2E2E;--text:#F0EDE8;--text-muted:#9A9590;
+  --border:rgba(201,168,76,0.25);--border-dim:rgba(255,255,255,0.07);
+  --green:#6ecf8f;--red:#e07070;
+}
+body{font-family:'Jost',sans-serif;background:var(--dark);color:var(--text);min-height:100vh}
+.app{max-width:960px;margin:0 auto;padding:2rem 1.5rem}
+/* HEADER */
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem;border-bottom:0.5px solid var(--border);padding-bottom:1.25rem}
+.header-left{display:flex;align-items:center;gap:1.25rem}
+.logo-circle{width:52px;height:52px;background:#111;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1px solid var(--border);flex-shrink:0;overflow:hidden}
+.logo-circle img{width:44px;height:44px;object-fit:contain}
+.header-text h1{font-family:'Cinzel',serif;font-size:20px;font-weight:600;letter-spacing:0.08em;color:var(--gold)}
+.header-text p{font-size:11px;color:var(--text-muted);letter-spacing:0.12em;text-transform:uppercase;margin-top:2px}
+.admin-toggle{background:none;border:0.5px solid var(--border-dim);border-radius:6px;color:var(--text-muted);font-family:'Jost',sans-serif;font-size:11px;padding:5px 14px;cursor:pointer;transition:all 0.2s;letter-spacing:0.06em}
+.admin-toggle:hover{border-color:var(--border);color:var(--text)}
+/* TABS */
+.tabs{display:flex;margin-bottom:2rem;border-bottom:0.5px solid var(--border-dim)}
+.tab{padding:0.55rem 1.3rem;font-size:13px;letter-spacing:0.05em;color:var(--text-muted);cursor:pointer;border:none;background:none;font-family:'Jost',sans-serif;border-bottom:2px solid transparent;transition:color 0.2s,border-color 0.2s}
+.tab.active{color:var(--gold);border-bottom-color:var(--gold)}
+.section{display:none}.section.active{display:block}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem}
+.section-header h2{font-family:'Cinzel',serif;font-size:14px;font-weight:400;letter-spacing:0.06em;color:var(--gold-light)}
+/* FORMS */
+label{display:block;font-size:11px;letter-spacing:0.08em;color:var(--text-muted);margin-bottom:5px}
+input[type=text],input[type=number],input[type=email],input[type=password],textarea,select{
+  width:100%;background:var(--dark-3);border:0.5px solid var(--border-dim);border-radius:6px;
+  color:var(--text);font-family:'Jost',sans-serif;font-size:14px;padding:9px 12px;outline:none;transition:border-color 0.2s}
+input:focus,textarea:focus,select:focus{border-color:var(--gold)}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+.field{margin-bottom:1rem}
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:8px;padding:9px 20px;border-radius:6px;font-family:'Jost',sans-serif;font-size:13px;font-weight:500;letter-spacing:0.05em;cursor:pointer;transition:all 0.2s;border:none}
+.btn-gold{background:var(--gold);color:#0E0E0E}.btn-gold:hover{background:var(--gold-light)}
+.btn-outline{background:transparent;border:0.5px solid var(--border);color:var(--text-muted)}.btn-outline:hover{border-color:var(--gold);color:var(--gold)}
+.btn-sm{padding:5px 14px;font-size:12px}
+/* PRODUCT CARDS */
+.product-card{background:var(--dark-3);border:0.5px solid var(--border-dim);border-radius:8px;padding:0.9rem 1rem;margin-bottom:0.55rem;display:flex;align-items:flex-start;gap:1rem;transition:border-color 0.2s}
+.product-card:hover{border-color:var(--border)}.product-card.selected{border-color:rgba(201,168,76,0.4)}
+.product-info{flex:1}.product-info h4{font-size:13px;font-weight:500;margin-bottom:3px}
+.product-info p{font-size:11px;color:var(--text-muted);line-height:1.5}
+.product-add{background:var(--dark-4);border:0.5px solid var(--border-dim);border-radius:6px;padding:5px 14px;font-size:12px;color:var(--text-muted);cursor:pointer;font-family:'Jost',sans-serif;transition:all 0.2s;white-space:nowrap}
+.product-add:hover{border-color:var(--gold);color:var(--gold)}.product-add:disabled{opacity:0.3;cursor:not-allowed}
+/* QUOTE ITEMS */
+.quote-item{background:var(--dark-3);border:0.5px solid var(--border-dim);border-radius:8px;padding:0.8rem 1rem;margin-bottom:0.5rem;display:flex;align-items:center;gap:1rem}
+.quote-item-info{flex:1}.quote-item-info h5{font-size:13px;font-weight:500}.quote-item-info p{font-size:11px;color:var(--text-muted)}
+.qty-ctrl{display:flex;align-items:center;gap:8px}
+.qty-btn{width:26px;height:26px;border-radius:4px;background:var(--dark-4);border:0.5px solid var(--border-dim);color:var(--text);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:border-color 0.2s}
+.qty-btn:hover{border-color:var(--gold);color:var(--gold)}.qty-btn:disabled{opacity:0.3;cursor:not-allowed}
+.qty-num{font-size:14px;font-weight:500;min-width:20px;text-align:center}
+/* TOTALS */
+.totals-box{background:var(--dark-2);border:0.5px solid var(--border);border-radius:8px;padding:1.25rem;margin-top:1.25rem}
+.total-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:13px;color:var(--text-muted)}
+.total-row.big{color:var(--text);font-size:16px;font-weight:500;border-top:0.5px solid var(--border-dim);margin-top:8px;padding-top:12px}
+.breakdown-box{background:var(--dark-3);border:0.5px solid var(--border-dim);border-radius:6px;padding:0.9rem;margin-top:0.8rem}
+.breakdown-title{font-size:10px;letter-spacing:0.1em;color:var(--text-muted);margin-bottom:8px}
+.breakdown-row{display:flex;justify-content:space-between;font-size:12px;padding:3px 0}
+/* TABLES */
+.data-table{width:100%;border-collapse:collapse;font-size:13px}
+.data-table th{text-align:left;padding:10px 12px;font-size:10px;letter-spacing:0.08em;color:var(--text-muted);border-bottom:0.5px solid var(--border-dim);font-weight:400}
+.data-table td{padding:10px 12px;border-bottom:0.5px solid var(--border-dim);vertical-align:middle}
+.data-table tr:hover td{background:var(--dark-3)}
+.pill{display:inline-block;padding:2px 10px;border-radius:12px;font-size:11px}
+.pill-green{background:rgba(30,90,50,0.4);color:var(--green)}.pill-red{background:rgba(100,30,30,0.4);color:var(--red)}
+/* CONFIG */
+.config-section{background:var(--dark-3);border:0.5px solid var(--border-dim);border-radius:8px;padding:1.25rem;margin-bottom:1rem}
+.config-section h3{font-size:13px;font-weight:500;margin-bottom:0.9rem;color:var(--gold);letter-spacing:0.04em}
+/* HISTORY */
+.history-item{background:var(--dark-3);border:0.5px solid var(--border-dim);border-radius:8px;padding:1rem;margin-bottom:0.6rem;display:flex;align-items:center;justify-content:space-between}
+.history-meta{font-size:11px;color:var(--text-muted);margin-top:3px}
+/* MISC */
+.empty-state{text-align:center;padding:2.5rem 1rem;color:var(--text-muted);font-size:13px}
+.search-input{background:var(--dark-3);border:0.5px solid var(--border-dim);border-radius:6px;color:var(--text);font-family:'Jost',sans-serif;font-size:13px;padding:7px 12px;outline:none;width:190px;transition:border-color 0.2s}
+.search-input:focus{border-color:var(--gold)}
+.sync-btn{background:var(--dark-3);border:0.5px solid var(--border);border-radius:6px;padding:6px 14px;font-size:12px;color:var(--text-muted);cursor:pointer;font-family:'Jost',sans-serif;transition:all 0.2s}
+.sync-btn:hover{border-color:var(--gold);color:var(--gold)}
+.status-msg{font-size:12px;padding:4px 10px}.status-ok{color:var(--green)}.status-err{color:var(--red)}
+.admin-badge{background:rgba(201,168,76,0.08);border:0.5px solid var(--border);border-radius:8px;padding:0.7rem 1rem;margin-bottom:1.25rem;font-size:12px;color:var(--gold);letter-spacing:0.04em}
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center;z-index:999}
+.modal-bg.open{display:flex}
+.modal-box{background:var(--dark-2);border:0.5px solid var(--border);border-radius:12px;padding:2rem;width:320px}
+.modal-box h3{font-family:'Cinzel',serif;font-size:16px;color:var(--gold);margin-bottom:0.5rem;letter-spacing:0.06em}
+.modal-box p{font-size:12px;color:var(--text-muted);margin-bottom:1.25rem}
+.pin-error{color:var(--red);font-size:12px;margin-top:6px;display:none}
+.modal-actions{display:flex;gap:8px;margin-top:1rem}
+/* OWNER PILLS */
+.owner-juan{background:rgba(83,74,183,0.15);color:#8b83e8;padding:1px 7px;border-radius:10px;font-size:10px}
+.owner-joshua{background:rgba(29,158,117,0.15);color:#3dbc8e;padding:1px 7px;border-radius:10px;font-size:10px}
+.owner-jorge{background:rgba(186,117,23,0.15);color:#e8a840;padding:1px 7px;border-radius:10px;font-size:10px}
+.owner-berny{background:rgba(180,60,60,0.15);color:#e07070;padding:1px 7px;border-radius:10px;font-size:10px}
+.owner-estudio{background:rgba(201,168,76,0.12);color:#C9A84C;padding:1px 7px;border-radius:10px;font-size:10px}
+.section-separator td{background:var(--dark-2)!important;padding:5px 12px;font-size:10px;letter-spacing:0.1em;color:var(--text-muted);font-weight:500}
+@media(max-width:600px){.grid-2{grid-template-columns:1fr}.app{padding:1rem}}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-left">
+      <div class="logo-circle">
+        <svg width="38" height="38" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="48" fill="#111" stroke="#C9A84C" stroke-width="2"/>
+          <text x="50" y="58" text-anchor="middle" font-family="Cinzel,serif" font-size="30" fill="#C9A84C" font-weight="600">K</text>
+        </svg>
+      </div>
+      <div class="header-text">
+        <h1>Kaifos Studio</h1>
+        <p>Renta de Equipo Audiovisual</p>
+      </div>
+    </div>
+    <button class="admin-toggle" id="adminToggleBtn" onclick="toggleAdmin()">Admin</button>
+  </div>
+
+  <!-- PUBLIC TABS -->
+  <div id="publicTabs" class="tabs">
+    <button class="tab active" onclick="showTab('cotizador',this,false)">Cotización</button>
+    <button class="tab" onclick="showTab('catalogo',this,false)">Catálogo</button>
+  </div>
+
+  <!-- ADMIN TABS -->
+  <div id="adminTabs" class="tabs" style="display:none">
+    <button class="tab active" onclick="showTab('adm-cotizador',this,true)">Cotización</button>
+    <button class="tab" onclick="showTab('adm-historial',this,true)">Historial</button>
+    <button class="tab" onclick="showTab('adm-inventario',this,true)">Inventario</button>
+    <button class="tab" onclick="showTab('adm-config',this,true)">Configuración</button>
+  </div>
+
+  <!-- ===== PUBLIC: COTIZADOR ===== -->
+  <div id="tab-cotizador" class="section active">
+    <div class="section-header"><h2>Datos del Cliente</h2></div>
+    <div class="grid-2">
+      <div class="field"><label>NOMBRE</label><input id="clientName" type="text" placeholder="Ej. Luis Gutiérrez"></div>
+      <div class="field"><label>EMPRESA / PRODUCCIÓN</label><input id="clientCompany" type="text" placeholder="Ej. Producciones XYZ"></div>
+    </div>
+    <div class="grid-2">
+      <div class="field"><label>FECHA DE RENTA</label><input id="rentDate" type="text" placeholder="Ej. 25 de mayo 2025"></div>
+      <div class="field"><label>CORREO (OPCIONAL)</label><input id="clientEmail" type="email" placeholder="cliente@email.com"></div>
+    </div>
+    <div class="field"><label>NOTAS DEL PROYECTO</label><textarea id="projectNotes" rows="2" placeholder="Descripción o notas adicionales..."></textarea></div>
+    <div class="section-header" style="margin-top:1.5rem">
+      <h2>Seleccionar Equipo</h2>
+      <input class="search-input" type="text" id="searchProduct" placeholder="Buscar equipo..." oninput="renderProducts(false)">
+    </div>
+    <div id="productList"><div class="empty-state">Cargando inventario...</div></div>
+    <div class="section-header" style="margin-top:1.5rem"><h2>Tu Cotización</h2></div>
+    <div id="quoteItems"><div class="empty-state" style="padding:1.5rem">Agrega equipos de la lista para comenzar.</div></div>
+    <div id="totalsSection" style="display:none">
+      <div class="totals-box">
+        <div class="total-row"><span>Subtotal</span><span id="subtotalDisplay">$0.00</span></div>
+        <div class="total-row big"><span>Total del Proyecto</span><span id="totalDisplay" style="color:var(--gold)">$0.00</span></div>
+      </div>
+      <div style="display:flex;gap:12px;margin-top:1.25rem;justify-content:flex-end;flex-wrap:wrap">
+        <button class="btn btn-outline" onclick="clearQuote(false)">Limpiar</button>
+        <button class="btn btn-gold" onclick="generatePDF(false)">⬇ Descargar Cotización PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== PUBLIC: CATÁLOGO ===== -->
+  <div id="tab-catalogo" class="section">
+    <div class="section-header">
+      <h2>Catálogo de Equipo</h2>
+      <button class="sync-btn" onclick="loadInventory()">↻ Actualizar</button>
+    </div>
+    <div id="catalogTable"><div class="empty-state">Cargando...</div></div>
+  </div>
+
+  <!-- ===== ADMIN: COTIZADOR ===== -->
+  <div id="tab-adm-cotizador" class="section">
+    <div class="admin-badge">Vista administrador — incluye descuento y desglose de ganancias</div>
+    <div class="grid-2">
+      <div class="field"><label>NOMBRE DEL CLIENTE</label><input id="adm-clientName" type="text" placeholder="Ej. Luis Gutiérrez"></div>
+      <div class="field"><label>EMPRESA / PRODUCCIÓN</label><input id="adm-clientCompany" type="text" placeholder="Ej. Producciones XYZ"></div>
+    </div>
+    <div class="grid-2">
+      <div class="field"><label>FECHA DE RENTA</label><input id="adm-rentDate" type="text" placeholder="Ej. 25 de mayo 2025"></div>
+      <div class="field"><label>CORREO</label><input id="adm-clientEmail" type="email" placeholder="cliente@email.com"></div>
+    </div>
+    <div class="field"><label>NOTAS</label><textarea id="adm-projectNotes" rows="2" placeholder="Notas del proyecto..."></textarea></div>
+    <div class="section-header" style="margin-top:1.25rem">
+      <h2>Equipo</h2>
+      <input class="search-input" type="text" id="adm-searchProduct" placeholder="Buscar..." oninput="renderProducts(true)">
+    </div>
+    <div id="adm-productList"><div class="empty-state">Cargando inventario...</div></div>
+    <div class="section-header" style="margin-top:1.25rem"><h2>Resumen</h2></div>
+    <div id="adm-quoteItems"><div class="empty-state" style="padding:1.25rem">Agrega equipos para comenzar.</div></div>
+    <div id="adm-totalsSection" style="display:none">
+      <div class="totals-box">
+        <div class="total-row"><span>Subtotal</span><span id="adm-subtotalDisplay">$0.00</span></div>
+        <div class="total-row" style="align-items:center">
+          <span>Descuento</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input type="number" id="adm-discountVal" value="0" min="0" max="100" style="width:60px;padding:5px 8px;font-size:13px" oninput="calcAdminTotals()">
+            <span style="font-size:12px;color:var(--text-muted)">%</span>
+          </div>
+        </div>
+        <div class="total-row big"><span>Total del Proyecto</span><span id="adm-totalDisplay" style="color:var(--gold)">$0.00</span></div>
+        <div class="breakdown-box">
+          <div class="breakdown-title">DISTRIBUCIÓN DE GANANCIAS</div>
+          <div id="adm-breakdownRows"></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:12px;margin-top:1.25rem;justify-content:flex-end;flex-wrap:wrap">
+        <button class="btn btn-outline" onclick="clearQuote(true)">Limpiar</button>
+        <button class="btn btn-gold" onclick="generatePDF(true)">⬇ Generar PDF Admin</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ADMIN: HISTORIAL ===== -->
+  <div id="tab-adm-historial" class="section">
+    <div class="section-header">
+      <h2>Historial de Cotizaciones</h2>
+      <span id="histCount" style="font-size:12px;color:var(--text-muted)">0 registros</span>
+    </div>
+    <div id="historyList"><div class="empty-state">Sin cotizaciones aún.</div></div>
+  </div>
+
+  <!-- ===== ADMIN: INVENTARIO ===== -->
+  <div id="tab-adm-inventario" class="section">
+    <div class="section-header">
+      <h2>Inventario Completo</h2>
+      <button class="sync-btn" onclick="loadInventory()">↻ Sincronizar Sheet</button>
+    </div>
+    <div id="inventoryTable"><div class="empty-state">Sin datos.</div></div>
+  </div>
+
+  <!-- ===== ADMIN: CONFIG ===== -->
+  <div id="tab-adm-config" class="section">
+    <div class="section-header"><h2>Configuración</h2></div>
+    <div class="config-section">
+      <h3>Google Sheets — Inventario en Tiempo Real</h3>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:0.9rem">
+        ID de tu hoja (entre <code style="color:var(--gold)">/d/</code> y <code style="color:var(--gold)">/edit</code> en la URL).
+        La hoja debe estar compartida como <strong style="color:var(--gold-light)">"Cualquier persona con el enlace puede ver"</strong>.
+      </p>
+      <div class="field"><label>ID DE LA HOJA</label><input id="sheetId" type="text" placeholder="1A76YYw1R8gPmVqaDlQZUqQCm5khlQ7-yLdDS8q2XkwA" value="1A76YYw1R8gPmVqaDlQZUqQCm5khlQ7-yLdDS8q2XkwA"></div>
+      <div class="field"><label>NOMBRE DE LA PESTAÑA</label><input id="sheetTab" type="text" placeholder="Inventario" value="Inventario"></div>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <button class="btn btn-gold btn-sm" onclick="saveSheetConfig()">Guardar y Sincronizar</button>
+        <span id="configStatus" class="status-msg"></span>
+      </div>
+      <div style="margin-top:1rem;background:var(--dark-2);border-radius:6px;padding:0.75rem 1rem;font-size:11px;color:var(--text-muted);line-height:1.8">
+        <strong style="color:var(--gold-light)">Formato de columnas en tu Google Sheet:</strong><br>
+        A: Concepto &nbsp;·&nbsp; B: Marca &nbsp;·&nbsp; C: Modelo &nbsp;·&nbsp; D: Stock &nbsp;·&nbsp; E: Incluye &nbsp;·&nbsp; F: Precio &nbsp;·&nbsp; G: % Dueño &nbsp;·&nbsp; H: % Estudio &nbsp;·&nbsp; I: Dueño (nombre)
+      </div>
+    </div>
+    <div class="config-section">
+      <h3>Datos de la Empresa</h3>
+      <div class="grid-2">
+        <div class="field"><label>NOMBRE</label><input id="cfgCompany" type="text" value="Kaifos Studio"></div>
+        <div class="field"><label>TELÉFONO</label><input id="cfgPhone" type="text" placeholder="+52 33 1234 5678"></div>
+      </div>
+      <div class="field"><label>CORREO</label><input id="cfgEmail" type="email" placeholder="hola@kaifos.studio"></div>
+      <div class="field" style="margin-top:0.5rem"><label>NUEVA CONTRASEÑA ADMIN</label><input id="newPin" type="password" placeholder="Dejar en blanco para no cambiar"></div>
+      <button class="btn btn-outline btn-sm" style="margin-top:0.25rem" onclick="saveCompanyConfig()">Guardar Todo</button>
+    </div>
+    <div class="config-section">
+      <h3>Inventario de Ejemplo</h3>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:0.9rem">Usa el inventario precargado de Kaifos para probar sin conectar el Sheet.</p>
+      <button class="btn btn-outline btn-sm" onclick="loadBuiltinInventory()">Cargar Inventario de Ejemplo</button>
+    </div>
+  </div>
+
+</div><!-- end .app -->
+
+<!-- MODAL LOGIN -->
+<div class="modal-bg" id="loginModal">
+  <div class="modal-box">
+    <h3>Acceso Admin</h3>
+    <p>Ingresa la contraseña para acceder al panel de administrador.</p>
+    <div class="field"><label>CONTRASEÑA</label><input id="pinInput" type="password" placeholder="••••••" onkeydown="if(event.key==='Enter')checkPin()"></div>
+    <div class="pin-error" id="pinError">Contraseña incorrecta.</div>
+    <div class="modal-actions">
+      <button class="btn btn-outline btn-sm" onclick="closeLogin()">Cancelar</button>
+      <button class="btn btn-gold btn-sm" onclick="checkPin()">Entrar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const { jsPDF } = window.jspdf;
+
+/* ─── STATE ─── */
+let inventory = [];
+let quoteItems = [];
+let adminItems = [];
+let history = JSON.parse(localStorage.getItem('ks_history') || '[]');
+let cfg = JSON.parse(localStorage.getItem('ks_config') || '{}');
+let quoteCounter = parseInt(localStorage.getItem('ks_counter') || '1');
+let isAdmin = false;
+const DEFAULT_PIN = 'kaifos2025';
+const SHEET_ID = cfg.sheetId || '1A76YYw1R8gPmVqaDlQZUqQCm5khlQ7-yLdDS8q2XkwA';
+
+/* ─── BUILTIN INVENTORY ─── */
+const BUILTIN = [
+  // ESTABILIZACIÓN
+  {concepto:'Estabilizador',marca:'DJI',modelo:'RS4',stock:1,incluye:'Estabilizador completo con accesorios',precio:1000,pctOwner:80,pctStudio:20,dueno:'Juan'},
+  {concepto:'Shoulder Rig',marca:'Smallrig',modelo:'-',stock:1,incluye:'Shoulder rig completo',precio:250,pctOwner:80,pctStudio:20,dueno:'Jorge'},
+  {concepto:'Kit de Riggeo para Auto',marca:'-',modelo:'-',stock:1,incluye:'Kit completo para riggeo vehicular',precio:700,pctOwner:80,pctStudio:20,dueno:'Jorge'},
+  {concepto:'Shoulder Rig',marca:'Modelo por confirmar',modelo:'-',stock:1,incluye:'Shoulder rig',precio:0,pctOwner:80,pctStudio:20,dueno:'Berny'},
+  // CÁMARAS
+  {concepto:'Cámara Sony FX30',marca:'Sony',modelo:'FX30',stock:1,incluye:'Cuerpo de cámara Sony FX30',precio:1300,pctOwner:80,pctStudio:20,dueno:'Berny'},
+  {concepto:'Cámara de Acción',marca:'DJI',modelo:'Action (modelo por confirmar)',stock:1,incluye:'Cámara de acción con accesorios',precio:0,pctOwner:80,pctStudio:20,dueno:'Jorge'},
+  // LENTES
+  {concepto:'Lente Canon FD 24mm',marca:'Canon',modelo:'FD 24mm',stock:1,incluye:'Lente Canon FD 24mm',precio:400,pctOwner:80,pctStudio:20,dueno:'Jorge'},
+  {concepto:'Lente Canon FD 100mm',marca:'Canon',modelo:'FD 100mm',stock:1,incluye:'Lente Canon FD 100mm',precio:400,pctOwner:80,pctStudio:20,dueno:'Jorge'},
+  {concepto:'Lente Helios 44 58mm',marca:'Helios',modelo:'44 58mm',stock:1,incluye:'Lente Helios 44 58mm',precio:400,pctOwner:80,pctStudio:20,dueno:'Jorge'},
+  {concepto:'Lente Júpiter 9 80mm',marca:'Júpiter',modelo:'9 80mm',stock:1,incluye:'Lente Júpiter 9 80mm',precio:400,pctOwner:80,pctStudio:20,dueno:'Jorge'},
+  {concepto:'Lente 7artisans Spectrum 35mm',marca:'7artisans',modelo:'Spectrum 35mm',stock:1,incluye:'Lente 7artisans Spectrum 35mm',precio:400,pctOwner:80,pctStudio:20,dueno:'Berny'},
+  {concepto:'Lente 7artisans Floral Bloom 57mm',marca:'7artisans',modelo:'Floral Bloom 57mm',stock:1,incluye:'Lente 7artisans Floral Bloom 57mm',precio:0,pctOwner:80,pctStudio:20,dueno:'Berny'},
+  {concepto:'Lente Sony G Master 10-20mm',marca:'Sony',modelo:'G Master 10-20mm',stock:1,incluye:'Lente Sony G Master 10-20mm',precio:400,pctOwner:80,pctStudio:20,dueno:'Berny'},
+  {concepto:'Lente Makinon 80-200mm',marca:'Makinon',modelo:'80-200mm',stock:1,incluye:'Lente Makinon 80-200mm',precio:400,pctOwner:80,pctStudio:20,dueno:'Berny'},
+  // ACCESORIOS LENTE
+  {concepto:'Follow Focus Lite',marca:'Smallrig',modelo:'-',stock:1,incluye:'Follow Focus Lite Smallrig',precio:350,pctOwner:80,pctStudio:20,dueno:'Berny'},
+  {concepto:'Adaptador Anamórfico 1.25x',marca:'Sirui',modelo:'1.25x',stock:1,incluye:'Adaptador anamórfico Sirui 1.25x',precio:600,pctOwner:80,pctStudio:20,dueno:'Berny'},
+  {concepto:'Adaptador Viltrox PL a Sony E',marca:'Viltrox',modelo:'PL-Sony E',stock:1,incluye:'Adaptador de montura PL a Sony E',precio:0,pctOwner:80,pctStudio:20,dueno:'Berny'},
+  {concepto:'Kit de Anillos Adaptadores',marca:'-',modelo:'-',stock:1,incluye:'Kit de anillos adaptadores varios',precio:0,pctOwner:80,pctStudio:20,dueno:'Berny'},
+  {concepto:'Mini Mattebox',marca:'Smallrig',modelo:'-',stock:1,incluye:'Mini mattebox Smallrig',precio:100,pctOwner:80,pctStudio:20,dueno:'Berny'},
+  {concepto:'Filtro Dioptría Dividida',marca:'Neewer',modelo:'-',stock:1,incluye:'Filtro de dioptría dividida Neewer',precio:0,pctOwner:80,pctStudio:20,dueno:'Jorge'},
+  {concepto:'Filtro ND 82mm',marca:'Neewer',modelo:'82mm',stock:1,incluye:'Filtro ND Neewer 82mm',precio:200,pctOwner:80,pctStudio:20,dueno:'Berny'},
+  // ILUMINACIÓN — 100% ESTUDIO
+  {concepto:'Máquina de Humo 500W',marca:'APGTEK',modelo:'500W',stock:1,incluye:'Máquina de humo con líquido incluido',precio:250,pctOwner:0,pctStudio:100,dueno:'Estudio'},
+  {concepto:'Luz LED VL110',marca:'Ulanzi',modelo:'VL110',stock:3,incluye:'Luz LED compacta VL110 (precio unitario, pack 3 por $250)',precio:100,pctOwner:0,pctStudio:100,dueno:'Estudio'},
+  // ENERGÍA
+  {concepto:'Base Plegable PS015 Pro',marca:'Neewer',modelo:'PS015 Pro',stock:1,incluye:'Base de batería plegable',precio:0,pctOwner:80,pctStudio:20,dueno:'Berny'},
+  {concepto:'Mini V-Mount PS099E',marca:'Neewer',modelo:'PS099E',stock:1,incluye:'Batería mini V-Mount',precio:0,pctOwner:80,pctStudio:20,dueno:'Berny'},
+  {concepto:'Batería D-tap NP-FZ100',marca:'Neewer',modelo:'NP-FZ100',stock:1,incluye:'Batería D-tap compatible NP-FZ100',precio:0,pctOwner:80,pctStudio:20,dueno:'Berny'},
+  // AUDIO
+  {concepto:'Sistema de Intercoms',marca:'Synco',modelo:'Xtalk',stock:1,incluye:'Sistema de intercomunicación Synco Xtalk',precio:0,pctOwner:80,pctStudio:20,dueno:'Berny'},
+  // FLASH
+  {concepto:'Flash SpeedLite 430EX III',marca:'Canon',modelo:'430EX III',stock:1,incluye:'Flash SpeedLite Canon 430EX III con accesorios',precio:0,pctOwner:80,pctStudio:20,dueno:'Berny'},
+];
+
+/* ─── INIT ─── */
+window.onload = () => { loadInventory(); renderHistory(); };
+
+/* ─── TABS ─── */
+function showTab(tab, btn, admin) {
+  const tabsId = admin ? 'adminTabs' : 'publicTabs';
+  document.querySelectorAll('#' + tabsId + ' .tab').forEach(t => t.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  if (tab === 'catalogo') renderCatalog();
+  if (tab === 'adm-historial') renderHistory();
+  if (tab === 'adm-inventario') renderInventoryTable();
+  if (tab === 'adm-cotizador') renderProducts(true);
+  if (tab === 'adm-config') populateConfig();
+}
+
+/* ─── ADMIN AUTH ─── */
+function toggleAdmin() {
+  if (isAdmin) {
+    isAdmin = false;
+    document.getElementById('adminTabs').style.display = 'none';
+    document.getElementById('publicTabs').style.display = 'flex';
+    document.getElementById('adminToggleBtn').textContent = 'Admin';
+    document.querySelectorAll('#publicTabs .tab')[0].click();
+  } else {
+    document.getElementById('loginModal').classList.add('open');
+    setTimeout(() => document.getElementById('pinInput').focus(), 100);
+  }
+}
+function checkPin() {
+  const pin = document.getElementById('pinInput').value;
+  const saved = cfg.pin || DEFAULT_PIN;
+  if (pin === saved) {
+    isAdmin = true;
+    document.getElementById('loginModal').classList.remove('open');
+    document.getElementById('pinInput').value = '';
+    document.getElementById('pinError').style.display = 'none';
+    document.getElementById('adminTabs').style.display = 'flex';
+    document.getElementById('publicTabs').style.display = 'none';
+    document.getElementById('adminToggleBtn').textContent = '× Salir';
+    document.querySelectorAll('#adminTabs .tab')[0].click();
+    renderProducts(true);
+  } else {
+    document.getElementById('pinError').style.display = 'block';
+  }
+}
+function closeLogin() {
+  document.getElementById('loginModal').classList.remove('open');
+  document.getElementById('pinInput').value = '';
+  document.getElementById('pinError').style.display = 'none';
+}
+
+/* ─── INVENTORY LOAD ─── */
+async function loadInventory() {
+  const sheetId = cfg.sheetId || SHEET_ID;
+  const tab = cfg.sheetTab || 'Inventario';
+  if (sheetId) {
+    const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tab)}`;
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('No accesible');
+      const text = await res.text();
+      const rows = parseCSV(text);
+      if (rows.length < 2) throw new Error('Sin datos');
+      const parsed = rows.slice(1).filter(r => r[0] && r[0].trim() && r[0].trim() !== 'Concepto').map(r => ({
+        concepto: r[0]||'', marca: r[1]||'', modelo: r[2]||'-',
+        stock: parseInt(r[3])||0, incluye: r[4]||'',
+        precio: parseFloat((r[5]||'0').replace(/[$,\s]/g,''))||0,
+        pctOwner: parseFloat(r[6])||80,
+        pctStudio: parseFloat(r[7])||20,
+        dueno: r[8]||'',
+      }));
+      if (parsed.length > 0) { inventory = parsed; afterLoad(); return; }
+    } catch(e) { console.warn('Sheet no disponible, usando builtin:', e); }
+  }
+  loadBuiltinInventory();
+}
+
+function loadBuiltinInventory() {
+  inventory = JSON.parse(JSON.stringify(BUILTIN));
+  afterLoad();
+}
+
+function afterLoad() {
+  renderProducts(false);
+  renderProducts(true);
+  renderCatalog();
+  renderInventoryTable();
+}
+
+function parseCSV(text) {
+  return text.split('\n').map(line => {
+    const cols = []; let cur = ''; let inQ = false;
+    for (const c of line) {
+      if (c === '"') { inQ = !inQ; }
+      else if (c === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+      else cur += c;
+    }
+    cols.push(cur.trim()); return cols;
+  });
+}
+
+/* ─── RENDER PRODUCTS ─── */
+function renderProducts(admin) {
+  const qId = admin ? 'adm-searchProduct' : 'searchProduct';
+  const elId = admin ? 'adm-productList' : 'productList';
+  const items = admin ? adminItems : quoteItems;
+  const q = (document.getElementById(qId)?.value || '').toLowerCase();
+  const el = document.getElementById(elId);
+  if (!el) return;
+  const available = inventory.filter(p => p.stock > 0 && p.precio > 0);
+  const filtered = available.filter(p => !q ||
+    p.concepto.toLowerCase().includes(q) ||
+    p.marca.toLowerCase().includes(q) ||
+    p.modelo.toLowerCase().includes(q));
+  if (!filtered.length) { el.innerHTML = '<div class="empty-state">Sin resultados o sin stock.</div>'; return; }
+  el.innerHTML = filtered.map(p => {
+    const inCart = items.find(i => i.concepto === p.concepto);
+    const avail = p.stock - (inCart ? inCart.qty : 0);
+    const isStudio = p.pctStudio === 100;
+    const ownerClass = ownerPillClass(p.dueno);
+    return `<div class="product-card${inCart ? ' selected' : ''}">
+      <div class="product-info">
+        <h4>${p.concepto} <span style="color:var(--text-muted);font-weight:300;font-size:11px">${p.marca}${p.modelo && p.modelo !== '-' ? ' ' + p.modelo : ''}</span></h4>
+        <p style="margin-bottom:4px">${p.incluye}</p>
+        ${admin ? `<span class="${ownerClass}">${p.dueno}</span>` : ''}
+        <p style="margin-top:4px">Disponible: <strong style="color:${avail > 0 ? 'var(--green)' : 'var(--red)'}">${avail}</strong></p>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0">
+        <span style="color:var(--gold);font-size:13px;font-weight:500">$${fmt(p.precio)}</span>
+        <button class="product-add" onclick="addToQuote('${esc(p.concepto)}',${admin})"
+          ${avail <= 0 ? 'disabled' : ''}>${avail <= 0 ? 'Máx. alcanzado' : inCart ? '+ Agregar otro' : 'Agregar'}</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function ownerPillClass(d) {
+  if (!d) return 'owner-estudio';
+  const m = d.toLowerCase();
+  if (m.includes('juan')) return 'owner-juan';
+  if (m.includes('joshua')) return 'owner-joshua';
+  if (m.includes('jorge')) return 'owner-jorge';
+  if (m.includes('berny')) return 'owner-berny';
+  return 'owner-estudio';
+}
+
+function esc(s) { return (s||'').replace(/'/g, "\\'"); }
+function fmt(n) { return Number(n).toLocaleString('es-MX', {minimumFractionDigits:2}); }
+
+/* ─── ADD / QTY ─── */
+function addToQuote(concepto, admin) {
+  const p = inventory.find(i => i.concepto === concepto);
+  if (!p) return;
+  const items = admin ? adminItems : quoteItems;
+  const ex = items.find(i => i.concepto === concepto);
+  if (ex) { if (ex.qty >= p.stock) return; ex.qty++; }
+  else items.push({ ...p, qty: 1 });
+  renderProducts(admin);
+  admin ? renderAdminItems() : renderPublicItems();
+}
+
+function changeQty(concepto, delta, admin) {
+  const items = admin ? adminItems : quoteItems;
+  const idx = items.findIndex(i => i.concepto === concepto);
+  if (idx < 0) return;
+  items[idx].qty += delta;
+  if (items[idx].qty <= 0) items.splice(idx, 1);
+  renderProducts(admin);
+  admin ? renderAdminItems() : renderPublicItems();
+}
+
+/* ─── RENDER QUOTE ITEMS ─── */
+function renderPublicItems() {
+  const el = document.getElementById('quoteItems');
+  const ts = document.getElementById('totalsSection');
+  if (!quoteItems.length) {
+    el.innerHTML = '<div class="empty-state" style="padding:1.5rem">Agrega equipos para comenzar.</div>';
+    ts.style.display = 'none'; return;
+  }
+  ts.style.display = 'block';
+  el.innerHTML = quoteItems.map(item => itemRow(item, false)).join('');
+  const sub = quoteItems.reduce((s, i) => s + i.precio * i.qty, 0);
+  document.getElementById('subtotalDisplay').textContent = '$' + fmt(sub);
+  document.getElementById('totalDisplay').textContent = '$' + fmt(sub);
+}
+
+function renderAdminItems() {
+  const el = document.getElementById('adm-quoteItems');
+  const ts = document.getElementById('adm-totalsSection');
+  if (!adminItems.length) {
+    el.innerHTML = '<div class="empty-state" style="padding:1.25rem">Agrega equipos para comenzar.</div>';
+    ts.style.display = 'none'; return;
+  }
+  ts.style.display = 'block';
+  el.innerHTML = adminItems.map(item => itemRow(item, true)).join('');
+  calcAdminTotals();
+}
+
+function itemRow(item, admin) {
+  return `<div class="quote-item">
+    <div class="quote-item-info">
+      <h5>${item.concepto}</h5>
+      <p>${item.marca}${item.modelo && item.modelo !== '-' ? ' ' + item.modelo : ''} — $${fmt(item.precio)} c/u</p>
+    </div>
+    <div class="qty-ctrl">
+      <button class="qty-btn" onclick="changeQty('${esc(item.concepto)}',-1,${admin})">−</button>
+      <span class="qty-num">${item.qty}</span>
+      <button class="qty-btn" onclick="changeQty('${esc(item.concepto)}',1,${admin})" ${item.qty >= item.stock ? 'disabled' : ''}>+</button>
+    </div>
+    <span style="min-width:80px;text-align:right;color:var(--gold);font-size:13px;font-weight:500">$${fmt(item.precio * item.qty)}</span>
+  </div>`;
+}
+
+function calcAdminTotals() {
+  const disc = Math.max(0, Math.min(100, parseFloat(document.getElementById('adm-discountVal').value) || 0));
+  const sub = adminItems.reduce((s, i) => s + i.precio * i.qty, 0);
+  const total = sub * (1 - disc / 100);
+  document.getElementById('adm-subtotalDisplay').textContent = '$' + fmt(sub);
+  document.getElementById('adm-totalDisplay').textContent = '$' + fmt(total);
+  // Breakdown by owner
+  const map = {};
+  adminItems.forEach(item => {
+    const line = item.precio * item.qty * (1 - disc / 100);
+    const owner = item.dueno || 'Estudio';
+    const ownerAmt = line * (item.pctOwner / 100);
+    const studioAmt = line * (item.pctStudio / 100);
+    if (!map[owner]) map[owner] = 0;
+    map[owner] += ownerAmt;
+    if (!map['Fondo Estudio']) map['Fondo Estudio'] = 0;
+    map['Fondo Estudio'] += studioAmt;
+  });
+  const rows = Object.entries(map).map(([k, v]) => {
+    const cls = k === 'Fondo Estudio' ? 'color:var(--gold)' : 'color:var(--green)';
+    return `<div class="breakdown-row"><span>${k}</span><span style="${cls}">$${fmt(v)}</span></div>`;
+  }).join('');
+  document.getElementById('adm-breakdownRows').innerHTML = rows;
+}
+
+/* ─── CLEAR ─── */
+function clearQuote(admin) {
+  if (admin) { adminItems = []; renderProducts(true); renderAdminItems(); ['adm-clientName','adm-clientCompany','adm-rentDate','adm-clientEmail','adm-projectNotes'].forEach(id => { const e = document.getElementById(id); if(e) e.value=''; }); document.getElementById('adm-discountVal').value = '0'; }
+  else { quoteItems = []; renderProducts(false); renderPublicItems(); ['clientName','clientCompany','rentDate','clientEmail','projectNotes'].forEach(id => { const e = document.getElementById(id); if(e) e.value=''; }); }
+}
+
+/* ─── CATALOG ─── */
+function renderCatalog() {
+  const el = document.getElementById('catalogTable');
+  if (!inventory.length) { el.innerHTML = '<div class="empty-state">Sin inventario.</div>'; return; }
+  el.innerHTML = `<table class="data-table">
+    <thead><tr><th>Concepto</th><th>Marca / Modelo</th><th>Incluye</th><th>Disponibilidad</th><th>Precio</th></tr></thead>
+    <tbody>${inventory.filter(p => p.precio > 0).map(p => `<tr>
+      <td style="font-weight:500">${p.concepto}</td>
+      <td style="color:var(--text-muted);font-size:12px">${p.marca}${p.modelo && p.modelo!=='-'?' '+p.modelo:''}</td>
+      <td style="color:var(--text-muted);font-size:11px">${p.incluye}</td>
+      <td><span class="pill ${p.stock>0?'pill-green':'pill-red'}">${p.stock>0?'Disponible':'Sin stock'}</span></td>
+      <td style="color:var(--gold)">$${fmt(p.precio)}</td>
+    </tr>`).join('')}</tbody></table>`;
+}
+
+/* ─── INVENTORY TABLE ─── */
+function renderInventoryTable() {
+  const el = document.getElementById('inventoryTable');
+  if (!inventory.length) { el.innerHTML='<div class="empty-state">Sin inventario.</div>'; return; }
+  el.innerHTML = `<table class="data-table">
+    <thead><tr><th>Concepto</th><th>Marca</th><th>Stock</th><th>Precio</th><th>Dueño</th><th>% Dueño</th><th>% Estudio</th></tr></thead>
+    <tbody>${inventory.map(p=>`<tr>
+      <td style="font-weight:500">${p.concepto}</td>
+      <td style="color:var(--text-muted);font-size:12px">${p.marca}${p.modelo&&p.modelo!=='-'?' '+p.modelo:''}</td>
+      <td><span class="pill ${p.stock>0?'pill-green':'pill-red'}">${p.stock}</span></td>
+      <td style="color:${p.precio>0?'var(--gold)':'var(--text-muted)'}${p.precio===0?';font-style:italic':''}">
+        ${p.precio>0?'$'+fmt(p.precio):'Por definir'}</td>
+      <td><span class="${ownerPillClass(p.dueno)}">${p.dueno||'—'}</span></td>
+      <td style="font-size:12px;color:var(--text-muted)">${p.pctOwner}%</td>
+      <td style="font-size:12px;color:${p.pctStudio===100?'var(--gold)':'var(--text-muted)'}">${p.pctStudio}%</td>
+    </tr>`).join('')}</tbody></table>`;
+}
+
+/* ─── HISTORY ─── */
+function renderHistory() {
+  const el = document.getElementById('historyList');
+  const cnt = document.getElementById('histCount');
+  if (cnt) cnt.textContent = history.length + ' registros';
+  if (!el) return;
+  if (!history.length) { el.innerHTML = '<div class="empty-state">Sin cotizaciones aún.</div>'; return; }
+  el.innerHTML = history.map(h => `<div class="history-item">
+    <div>
+      <div style="font-size:13px;font-weight:500;color:var(--gold)">${h.folio}</div>
+      <div class="history-meta">${h.client}${h.company?' — '+h.company:''}</div>
+      <div class="history-meta">${h.date} · ${h.items} equipo(s)${h.discount?' · Descuento: '+h.discount+'%':''}</div>
+    </div>
+    <span style="color:var(--gold);font-weight:500;font-size:14px">${h.total}</span>
+  </div>`).join('');
+}
+
+/* ─── PDF ─── */
+function generatePDF(admin) {
+  const p = admin ? 'adm-' : '';
+  const client = document.getElementById(p+'clientName')?.value || 'Cliente';
+  const company = document.getElementById(p+'clientCompany')?.value || '';
+  const rentDate = document.getElementById(p+'rentDate')?.value || '';
+  const notes = document.getElementById(p+'projectNotes')?.value || '';
+  const disc = admin ? (parseFloat(document.getElementById('adm-discountVal')?.value)||0) : 0;
+  const items = admin ? adminItems : quoteItems;
+  if (!items.length) { alert('Agrega al menos un equipo a la cotización.'); return; }
+  const sub = items.reduce((s,i) => s+i.precio*i.qty, 0);
+  const total = sub*(1-disc/100);
+  const folio = 'KS-'+String(quoteCounter).padStart(4,'0');
+  const dateStr = new Date().toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'});
+  const co = JSON.parse(localStorage.getItem('ks_config')||'{}');
+
+  const doc = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const W=210,H=297,mg=18;
+
+  // BG
+  doc.setFillColor(14,14,14); doc.rect(0,0,W,H,'F');
+  // Header block
+  doc.setFillColor(24,24,24); doc.rect(0,0,W,54,'F');
+  doc.setFillColor(201,168,76); doc.rect(0,0,5,54,'F');
+  doc.setDrawColor(201,168,76); doc.setLineWidth(0.4); doc.line(mg,54,W-mg,54);
+  // Company name
+  doc.setTextColor(201,168,76); doc.setFontSize(22); doc.setFont('helvetica','bold');
+  doc.text('KAIFOS STUDIO',mg+2,22);
+  doc.setFontSize(8); doc.setFont('helvetica','normal'); doc.setTextColor(154,149,144);
+  doc.text('RENTA DE EQUIPO AUDIOVISUAL',mg+2,30);
+  if(co.phone) doc.text(co.phone,mg+2,38);
+  if(co.email) doc.text(co.email,mg+2,45);
+  // Folio
+  doc.setTextColor(201,168,76); doc.setFontSize(14); doc.setFont('helvetica','bold');
+  doc.text('COTIZACIÓN',W-mg,20,{align:'right'});
+  doc.setFontSize(10); doc.setTextColor(240,237,232);
+  doc.text(folio,W-mg,28,{align:'right'});
+  doc.setFontSize(8); doc.setTextColor(154,149,144); doc.setFont('helvetica','normal');
+  doc.text(dateStr,W-mg,36,{align:'right'});
+
+  // Client box
+  let y=66;
+  doc.setFillColor(26,26,26); doc.roundedRect(mg,y,W-mg*2,28,2,2,'F');
+  doc.setTextColor(154,149,144); doc.setFontSize(8);
+  doc.text('CLIENTE',mg+5,y+7);
+  doc.text('EMPRESA / PRODUCCIÓN',mg+70,y+7);
+  doc.text('FECHA DE RENTA',mg+148,y+7);
+  doc.setTextColor(240,237,232); doc.setFontSize(10); doc.setFont('helvetica','bold');
+  doc.text(client,mg+5,y+18);
+  doc.text(company||'—',mg+70,y+18);
+  doc.text(rentDate||'—',mg+148,y+18);
+
+  // Table header
+  y+=36;
+  doc.setFillColor(34,34,34); doc.rect(mg,y,W-mg*2,8,'F');
+  doc.setTextColor(201,168,76); doc.setFontSize(7.5); doc.setFont('helvetica','bold');
+  const cx=[mg+2,mg+46,mg+80,mg+110,mg+126,mg+152];
+  ['CONCEPTO','MARCA / MODELO','INCLUYE','CANT','P. UNITARIO','TOTAL'].forEach((h,i)=>doc.text(h,cx[i],y+5.5));
+
+  // Rows
+  y+=10; doc.setFont('helvetica','normal');
+  items.forEach((item,idx)=>{
+    if(y>H-60){doc.addPage();doc.setFillColor(14,14,14);doc.rect(0,0,W,H,'F');y=20;}
+    if(idx%2===0){doc.setFillColor(20,20,20);doc.rect(mg,y-2,W-mg*2,10,'F');}
+    doc.setTextColor(240,237,232); doc.setFontSize(8.5);
+    const cname = item.concepto.length>22?item.concepto.substring(0,20)+'...':item.concepto;
+    doc.text(cname,cx[0],y+4);
+    doc.setTextColor(154,149,144); doc.setFontSize(7.5);
+    const brand = (item.marca+(item.modelo&&item.modelo!=='-'?' '+item.modelo:'')).substring(0,22);
+    doc.text(brand,cx[1],y+4);
+    const inc = item.incluye.length>28?item.incluye.substring(0,26)+'...':item.incluye;
+    doc.text(inc,cx[2],y+4);
+    doc.setTextColor(240,237,232); doc.setFontSize(8.5);
+    doc.text(String(item.qty),cx[3]+5,y+4,{align:'center'});
+    doc.text('$'+fmt(item.precio),cx[4],y+4);
+    doc.setTextColor(201,168,76);
+    doc.text('$'+fmt(item.precio*item.qty),W-mg-2,y+4,{align:'right'});
+    y+=10;
+  });
+
+  // Divider
+  doc.setDrawColor(201,168,76); doc.setLineWidth(0.3); doc.line(mg,y,W-mg,y); y+=6;
+
+  // Totals box
+  const tw=82,tx=W-mg-tw,bh=disc>0?32:22;
+  doc.setFillColor(26,26,26); doc.roundedRect(tx,y,tw,bh,2,2,'F');
+  doc.setTextColor(154,149,144); doc.setFontSize(8); doc.setFont('helvetica','normal');
+  doc.text('SUBTOTAL',tx+4,y+7);
+  doc.setTextColor(240,237,232);
+  doc.text('$'+fmt(sub),tx+tw-4,y+7,{align:'right'});
+  if(disc>0){
+    doc.setTextColor(154,149,144); doc.text('DESCUENTO '+disc+'%',tx+4,y+15);
+    doc.setTextColor(110,207,143); doc.text('−$'+fmt(sub*disc/100),tx+tw-4,y+15,{align:'right'});
+    doc.setTextColor(201,168,76); doc.setFontSize(11); doc.setFont('helvetica','bold');
+    doc.text('TOTAL',tx+4,y+26); doc.text('$'+fmt(total),tx+tw-4,y+26,{align:'right'});
+  } else {
+    doc.setTextColor(201,168,76); doc.setFontSize(11); doc.setFont('helvetica','bold');
+    doc.text('TOTAL',tx+4,y+17); doc.text('$'+fmt(total),tx+tw-4,y+17,{align:'right'});
+  }
+
+  // Notes
+  if(notes){ y+=bh+8; doc.setFillColor(26,26,26); doc.roundedRect(mg,y,W-mg*2,18,2,2,'F'); doc.setTextColor(154,149,144); doc.setFontSize(7.5); doc.setFont('helvetica','normal'); doc.text('NOTAS',mg+4,y+6); doc.setTextColor(200,197,192); doc.text(notes.substring(0,120),mg+4,y+13); }
+
+  // Footer
+  doc.setFillColor(24,24,24); doc.rect(0,H-18,W,18,'F');
+  doc.setDrawColor(201,168,76); doc.line(0,H-18,W,H-18);
+  doc.setFillColor(201,168,76); doc.rect(0,H-18,5,18,'F');
+  doc.setTextColor(154,149,144); doc.setFontSize(7.5); doc.setFont('helvetica','normal');
+  doc.text('Kaifos Studio — Producción Audiovisual',mg,H-10);
+  doc.text(folio,W-mg,H-10,{align:'right'});
+
+  doc.save(`Cotizacion_${folio}_${client.replace(/\s+/g,'_')}.pdf`);
+
+  // Save to history
+  history.unshift({folio,client,company,date:dateStr,total:'$'+fmt(total),items:items.length,discount:disc||0});
+  localStorage.setItem('ks_history',JSON.stringify(history));
+  quoteCounter++; localStorage.setItem('ks_counter',String(quoteCounter));
+  renderHistory();
+}
+
+/* ─── CONFIG ─── */
+function populateConfig() {
+  if(cfg.sheetId) document.getElementById('sheetId').value=cfg.sheetId;
+  if(cfg.sheetTab) document.getElementById('sheetTab').value=cfg.sheetTab;
+  if(cfg.company) document.getElementById('cfgCompany').value=cfg.company;
+  if(cfg.phone) document.getElementById('cfgPhone').value=cfg.phone;
+  if(cfg.email) document.getElementById('cfgEmail').value=cfg.email;
+}
+function saveSheetConfig() {
+  const id=document.getElementById('sheetId').value.trim();
+  const tab=document.getElementById('sheetTab').value.trim()||'Inventario';
+  if(!id){const s=document.getElementById('configStatus');s.textContent='Ingresa el ID';s.className='status-msg status-err';return;}
+  cfg.sheetId=id; cfg.sheetTab=tab; localStorage.setItem('ks_config',JSON.stringify(cfg));
+  const s=document.getElementById('configStatus');s.textContent='✓ Guardado. Sincronizando...';s.className='status-msg status-ok';
+  loadInventory();
+}
+function saveCompanyConfig() {
+  cfg.company=document.getElementById('cfgCompany')?.value||'';
+  cfg.phone=document.getElementById('cfgPhone')?.value||'';
+  cfg.email=document.getElementById('cfgEmail')?.value||'';
+  const np=document.getElementById('newPin')?.value||'';
+  if(np) cfg.pin=np;
+  localStorage.setItem('ks_config',JSON.stringify(cfg));
+  alert('Datos guardados.'+(np?' Contraseña actualizada.':''));
+}
+</script>
+</body>
+</html>
